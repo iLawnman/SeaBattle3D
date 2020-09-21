@@ -6,29 +6,32 @@ using UnityEngine.UI;
 
 public class BattleGameManager : MonoBehaviour
 {
+    //game data
     public enum GameMode {pause, edit, play};
     public GameMode currentMode;
     public Text modeInfo;
 
+    //game ui elements
     public GameObject cross;
     public GameObject hitShip;
     public bool playerCanShot = true;
 
+    //AI ships data
     public PlayerField otherPlayerFeildData;
     public GameObject otherPlayerField;
     public List<Collider> otherShipColliders;
     public List<Vector3> aiShoots = new List<Vector3>();
 
+    //Player ships data
     public GameObject playerField;
     public PlayerField playerFieldData;
     public List<Collider> playerShipColliders;
 
+    //data for edit mode
     public GameObject editedShip;
     public bool editCanPlace;
-    //public Vector3 goodShoot;
-    //public bool needAIMoreGoodShoot;
-    //public List<Vector3> deadZone;
 
+    //game data
     public GameUIManager uiManager;
     public GameAudioManager audioManager;
     public AudioSource aSource;
@@ -45,6 +48,7 @@ public class BattleGameManager : MonoBehaviour
         AIShipsRandomPlace();
     }
 
+    // get colliders of all ships on game field
     List<Collider> GetShipColliders (PlayerField field)
     {
         List<Collider> allColl = new List<Collider>();
@@ -58,6 +62,7 @@ public class BattleGameManager : MonoBehaviour
         return allColl;
     }
 
+    // Place ships on random place on AI field
     void AIShipsRandomPlace ()
     {
         var otherShips = otherPlayerFeildData.Ships;
@@ -76,6 +81,7 @@ public class BattleGameManager : MonoBehaviour
         }
     }
 
+    // try place ai ships on right place
     void PlaceAIShip(GameObject ship)
     {
         do
@@ -85,12 +91,14 @@ public class BattleGameManager : MonoBehaviour
         while (!CheckShipCell(ship, otherPlayerFeildData));
     }
 
+    // random cell on game field
     Vector3 GetRandomCell ()
     {
         return
                new Vector3(Random.Range(0, 10), 0.5f, Random.Range(-9, 1));
     }
 
+    // check place for in field and don't touch other ships
     bool CheckShipCell (GameObject ship, PlayerField playerField)
     {
         Collider[] cols = ship.GetComponentsInChildren<Collider>();
@@ -132,7 +140,8 @@ public class BattleGameManager : MonoBehaviour
         }
             return true;
     }
-    
+
+    //check for player ship die
     bool CheckPlayerShipDie (Transform ship)
     {
         foreach (Transform chi in ship)
@@ -144,6 +153,7 @@ public class BattleGameManager : MonoBehaviour
         return true;
     }
 
+    // check ai shot for injured or die player ship
     bool CheckAIShipShoot(Vector3 shoot)
     {
         // check cubes transform == shoot
@@ -177,6 +187,7 @@ public class BattleGameManager : MonoBehaviour
         return false;
     }
 
+    // instance shot GO
     void AIshot()
     {
         Vector3 shootAIposition = GetAIshot();
@@ -202,6 +213,7 @@ public class BattleGameManager : MonoBehaviour
         }
     }
 
+    // getc ai shot position for random/injured player ship
     Vector3 GetAIshot()
     {
         Vector3 shoot = new Vector3();
@@ -308,6 +320,7 @@ public class BattleGameManager : MonoBehaviour
         }
      }
 
+    // end game
     public void EndGame (GameObject player)
     {
         Debug.Log(player.name + " LOSE!");
@@ -321,6 +334,7 @@ public class BattleGameManager : MonoBehaviour
                 PlayerWin();
     }
 
+    //new game
     public void NewGame()
     {
 
@@ -353,18 +367,21 @@ public class BattleGameManager : MonoBehaviour
         currentMode = GameMode.edit;
     }
 
+    // player win
     void PlayerWin ()
     {
         currentMode = GameMode.pause;
         uiManager.winUI.SetActive(true);
     }
 
+    // ai win
     void PlayerLose ()
     {
         currentMode = GameMode.pause;
         uiManager.loseUI.SetActive(true);
     }
 
+    //place player ship and get next for select place
     void PlaceShip()
     {
         // select next ship
@@ -390,17 +407,20 @@ public class BattleGameManager : MonoBehaviour
         }
     }
 
+    // rotate player ship
     void RotateShip(Vector3Int rootCell)
     {
         editedShip.transform.RotateAround(rootCell, transform.up, 90);
     }
 
+    // show ship while edit
     void ShowShip (Vector3Int cell)
     {
         CheckPlaceForShip(cell);
         CheckOtherShips();
     }
 
+    // check edited ship for intersect with placed player ships
     bool CheckOtherShips ()
     {
         //check around for specfic ship
@@ -439,6 +459,7 @@ public class BattleGameManager : MonoBehaviour
         return true;
     }
 
+    // check edited ship in game field
     bool CheckPlaceForShip(Vector3Int cell)
     {
         editedShip.transform.position = cell;
@@ -466,6 +487,7 @@ public class BattleGameManager : MonoBehaviour
         return true;
     }
 
+    // check player fire cell for injured or die ai ship
     void CheckFireCell(RaycastHit hit) {
 
             if (hit.collider.CompareTag("Ship"))
@@ -510,6 +532,7 @@ public class BattleGameManager : MonoBehaviour
             }
         }
 
+    // add cells around died player ship for don't shot in
     void AddDeadZone (GameObject deadShip)
     {
         foreach (Transform cube in deadShip.transform)
@@ -526,6 +549,7 @@ public class BattleGameManager : MonoBehaviour
         }
     }
 
+    //check player fire for ai ship
     bool CheckFire(Vector3Int checkin)
         {
             foreach (Transform chi in otherPlayerField.transform)
@@ -536,6 +560,7 @@ public class BattleGameManager : MonoBehaviour
             return false;
         }
 
+    // check ai ship for die
     bool CheckShipDie(Transform ship)
         {
             foreach (Transform chi in ship)
