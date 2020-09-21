@@ -1,12 +1,10 @@
 ﻿using UnityEngine;
 using System.Collections;
 
-namespace CubeSpaceFree
-{
+
     // Destroy object after lifetime has passed.
     public class DestroyByTime : MonoBehaviour
     {
-
         public float lifetime;
         // Use this for initialization
         void Start()
@@ -19,5 +17,4 @@ namespace CubeSpaceFree
         {
 
         }
-    }
 }
