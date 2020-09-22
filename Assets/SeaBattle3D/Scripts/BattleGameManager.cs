@@ -1,8 +1,8 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-//using System.Linq;
 using UnityEngine.UI;
+using UnityEngine.InputSystem;
 
 public class BattleGameManager : MonoBehaviour
 {
@@ -36,6 +36,10 @@ public class BattleGameManager : MonoBehaviour
     public GameAudioManager audioManager;
     public AudioSource aSource;
 
+    //input data
+    public Vector2 _mousePosition;
+    private SeaBattleInputAction _input;
+
     // Start is called before the first frame update
     void Start()
     {
@@ -44,8 +48,28 @@ public class BattleGameManager : MonoBehaviour
         aSource = GetComponent<AudioSource>();
         playerShipColliders = GetShipColliders(playerFieldData);
         otherShipColliders = GetShipColliders(otherPlayerFeildData);
+    }
 
-        AIShipsRandomPlace();
+    void Awake()
+    {
+        _input = new SeaBattleInputAction();
+        _input.Player.Move.performed += Move_performed;
+
+    }
+
+    private void OnEnable()
+    {
+        _input.Enable();
+    }
+
+    private void OnDisable()
+    {
+        _input.Disable();
+    }
+
+    private void Move_performed(InputAction.CallbackContext obj)
+    {
+        _mousePosition = obj.ReadValue<Vector2>();
     }
 
     // get colliders of all ships on game field
@@ -282,12 +306,19 @@ public class BattleGameManager : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+        //if (Input.GetKey(KeyCode.F1))
+        //    NewGame();
+
+        //
+        //Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+        Ray ray = Camera.main.ScreenPointToRay(_mousePosition);
+
         RaycastHit hit;
 
         if (currentMode == GameMode.play)
         {
-            if (playerCanShot && Input.GetMouseButtonDown(0))
+            //***
+            if (playerCanShot && _input.Player.Fire.triggered)
             {
                 if (Physics.Raycast(ray, out hit))
                 {
@@ -308,11 +339,11 @@ public class BattleGameManager : MonoBehaviour
                 {
                     ShowShip(rootCell);
                 }
-                if (editCanPlace && rootCell != null && Input.GetMouseButtonDown(0))
+                if (editCanPlace && rootCell != null && _input.Player.Fire.triggered)
                 {
                     PlaceShip();
                 }
-                if (Input.GetMouseButtonDown(1))
+                if (_input.Player.Rotate.triggered)
                 {
                     RotateShip(rootCell);
                 }
@@ -334,6 +365,11 @@ public class BattleGameManager : MonoBehaviour
                 PlayerWin();
     }
 
+    public void QuitGame ()
+    {
+        Application.Quit();
+    }
+
     //new game
     public void NewGame()
     {
@@ -342,6 +378,7 @@ public class BattleGameManager : MonoBehaviour
         foreach (PlayerField.ShipData oship in otherShips)
         {
             oship.status = PlayerField.shipStatus.Hide;
+            ResetShipCubes(oship.go);
             foreach (Transform mesh in oship.go.transform)
             {
                 mesh.GetComponent<MeshRenderer>().enabled = false;
@@ -354,17 +391,32 @@ public class BattleGameManager : MonoBehaviour
         {
             pship.status = PlayerField.shipStatus.Hide;
             pship.go.transform.localPosition = new Vector3(2, 0.5f, -11);
+            ResetShipCubes(pship.go);
         }
         var startShip = playerFieldData.Ships.Find(x => x.status == PlayerField.shipStatus.Hide);
         editedShip = startShip.go;
 
-        foreach (Transform chi in transform)
+        var childs = GetComponentsInChildren<Transform>();
+
+        foreach (Transform chi in childs)
         {
             if (chi.name.Contains("cross"))
                 Destroy(chi.gameObject);
         }
         aiShoots.Clear();
         currentMode = GameMode.edit;
+
+        uiManager.startUI.SetActive(false);
+    }
+
+    // reset ships cubes
+    void ResetShipCubes(GameObject ship)
+    {
+        foreach (Transform cube in ship.transform)
+        {
+            var cubeTransform = cube.transform;
+            cube.position = new Vector3(cubeTransform.position.x, 0, cubeTransform.position.z);
+        }
     }
 
     // player win

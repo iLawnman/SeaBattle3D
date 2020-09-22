@@ -20,17 +20,6 @@ public class GameUIManager : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (Input.GetKey(KeyCode.Space))
-        {
-            startUI.SetActive(false);
-            battleManager.currentMode = BattleGameManager.GameMode.edit;
-        }
 
-        if ((winUI.activeSelf || loseUI.activeSelf) && Input.GetKey(KeyCode.Space))
-        {
-            winUI.SetActive(false);
-            loseUI.SetActive(false);
-            battleManager.NewGame();
-        }
     }
 }
