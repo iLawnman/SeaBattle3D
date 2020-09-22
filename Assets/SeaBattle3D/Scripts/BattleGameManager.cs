@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.InputSystem;
+using System.Linq;
 
 public class BattleGameManager : MonoBehaviour
 {
@@ -54,7 +55,6 @@ public class BattleGameManager : MonoBehaviour
     {
         _input = new SeaBattleInputAction();
         _input.Player.Move.performed += Move_performed;
-
     }
 
     private void OnEnable()
@@ -67,6 +67,7 @@ public class BattleGameManager : MonoBehaviour
         _input.Disable();
     }
 
+    //get mouse screen position
     private void Move_performed(InputAction.CallbackContext obj)
     {
         _mousePosition = obj.ReadValue<Vector2>();
@@ -82,7 +83,6 @@ public class BattleGameManager : MonoBehaviour
 
             allColl.AddRange(shi.GetComponentsInChildren<Collider>());
         }
-
         return allColl;
     }
 
@@ -93,11 +93,6 @@ public class BattleGameManager : MonoBehaviour
 
         foreach (PlayerField.ShipData ship in otherShips)
         {
-            //foreach (Transform mesh in ship.go.transform)
-            //{
-            //    mesh.GetComponent<MeshRenderer>().enabled = true;
-            //}
-
             if (Random.Range(0, 2) == 1)
                 ship.go.transform.RotateAround(ship.go.transform.position, transform.up, 90);
             
@@ -157,7 +152,6 @@ public class BattleGameManager : MonoBehaviour
                     )
                    )
                 {
-                    //Debug.Log("AI ship " + chi.transform.parent.name + " intersect with " + othership.transform.parent.name);
                     return false;
                 }
             }
@@ -185,10 +179,11 @@ public class BattleGameManager : MonoBehaviour
         {
             if (cube.CompareTag("Ship"))
             {
-                //if (cube.transform.position == shoot)
                 if (cube.transform.position.x == shoot.x && cube.transform.position.z == shoot.z)
                 {
                     Debug.Log("AI shoot in " + cube.transform.parent.name);
+                    aSource.PlayOneShot(audioManager.ship);
+
                     var ship = playerFieldData.Ships.Find(x => x.go == cube.transform.parent.gameObject);
                     
                     cube.transform.position += new Vector3(0, -0.2f, 0);
@@ -197,7 +192,6 @@ public class BattleGameManager : MonoBehaviour
                     if (CheckPlayerShipDie(ship.go.transform))
                     {
                         ship.status = PlayerField.shipStatus.Die;
-                        //needAIMoreGoodShoot = false;
                         AddDeadZone(ship.go);
                         playerFieldData.CheckGameStatus();
                     }
@@ -223,7 +217,6 @@ public class BattleGameManager : MonoBehaviour
         if (CheckAIShipShoot(fire.transform.position))
         {
             GameObject shipfire = Instantiate(hitShip);
-            aSource.PlayOneShot(audioManager.ship);
 
             shipfire.transform.SetParent(playerFieldData.transform);
             shipfire.transform.localPosition = shootAIposition + new Vector3(0, 0.5f, 0);
@@ -249,19 +242,20 @@ public class BattleGameManager : MonoBehaviour
         {
             do
             {
-                shoot = new Vector3(Random.Range(0, 10), 0.5f, Random.Range(-9, 1));
+                shoot = new Vector3(Random.Range(0, 10), 0, Random.Range(-9, 1));
 
             } while (aiShoots.Contains(shoot));
         }
 
         else {
-            shoot = new Vector3(Random.Range(0, 10), 0.5f, Random.Range(-9, 1));
+            shoot = new Vector3(Random.Range(0, 10), 0, Random.Range(-9, 1));
         }
         if (injShip != null && aiShoots.Count > 0) {
 
             foreach (Transform cube in injShip.go.transform)
             {
                 Vector3 cubeRelative = playerFieldData.transform.InverseTransformPoint(cube.transform.position);
+                cubeRelative = new Vector3(cubeRelative.x, 0, cubeRelative.z);
                 if (cube.transform.localPosition.y < 0)
                     goodShot.Add(cubeRelative);
             }
@@ -285,18 +279,23 @@ public class BattleGameManager : MonoBehaviour
                             shoot = goodShot[0] + Vector3.right;
                             break;
                     }
+
+                    if (aiShoots.Contains(shoot))
+                        Debug.Log("1 inj sector shot contain new - new recall " + shoot);
                 }
                 while (aiShoots.Contains(shoot));
                 }
 
             if (goodShot.Count > 1)
             {
-                    Vector3 dir = goodShot[0] - goodShot[1];
-                    shoot = goodShot[0] + dir;
-
-                if (aiShoots.Contains(shoot))
-                    shoot = goodShot[goodShot.Count - 1] + dir;
-                    Debug.Log("2 and more inj");
+                foreach (Transform cube in injShip.go.transform)
+                {
+                    Vector3 cubeRelative = playerFieldData.transform.InverseTransformPoint(cube.transform.position);
+                    cubeRelative = new Vector3(cubeRelative.x, 0, cubeRelative.z);
+                    if (cube.transform.localPosition.y == 0 && !aiShoots.Contains(new Vector3(cubeRelative.x, 0, cubeRelative.z)))
+                        shoot = new Vector3(cubeRelative.x, 0, cubeRelative.z);
+                    Debug.Log("2 and more inj " + shoot);
+                }
             }
         }
         aiShoots.Add(new Vector3( shoot.x, 0, shoot.z));
@@ -306,11 +305,6 @@ public class BattleGameManager : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        //if (Input.GetKey(KeyCode.F1))
-        //    NewGame();
-
-        //
-        //Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
         Ray ray = Camera.main.ScreenPointToRay(_mousePosition);
 
         RaycastHit hit;
@@ -407,6 +401,8 @@ public class BattleGameManager : MonoBehaviour
         currentMode = GameMode.edit;
 
         uiManager.startUI.SetActive(false);
+        uiManager.winUI.SetActive(false);
+        uiManager.loseUI.SetActive(false);
     }
 
     // reset ships cubes
@@ -591,14 +587,18 @@ public class BattleGameManager : MonoBehaviour
         {
             //relative pos
             var relativeCube = playerFieldData.transform.InverseTransformPoint(cube.transform.position);
-            if (!aiShoots.Contains(cube.transform.position))
-            {
+            
                 aiShoots.Add(new Vector3(relativeCube.x, 0, relativeCube.z) + Vector3.forward);
                 aiShoots.Add(new Vector3(relativeCube.x, 0, relativeCube.z) + Vector3.back);
                 aiShoots.Add(new Vector3(relativeCube.x, 0, relativeCube.z) + Vector3.left);
                 aiShoots.Add(new Vector3(relativeCube.x, 0, relativeCube.z) + Vector3.right);
-            }
+                //add diagonals
+                aiShoots.Add(new Vector3(relativeCube.x, 0, relativeCube.z) + Vector3.forward + Vector3.left);
+                aiShoots.Add(new Vector3(relativeCube.x, 0, relativeCube.z) + Vector3.back + Vector3.left);
+                aiShoots.Add(new Vector3(relativeCube.x, 0, relativeCube.z) + Vector3.forward + Vector3.right);
+                aiShoots.Add(new Vector3(relativeCube.x, 0, relativeCube.z) + Vector3.back + Vector3.right);
         }
+        aiShoots = aiShoots.Distinct().ToList();
     }
 
     //check player fire for ai ship

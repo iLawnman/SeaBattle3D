@@ -75,11 +75,55 @@
                 {
                     "name": "",
                     "id": "753ad7a7-4649-4924-b8f5-7261b3139cd6",
-                    "path": "<VirtualMouse>/rightButton",
+                    "path": "<Mouse>/rightButton",
                     "interactions": "",
                     "processors": "",
                     "groups": "Keyboard&Mouse",
                     "action": "Rotate",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "576ffd78-c29a-4808-8738-3751688abbfb",
+                    "path": "<Touchscreen>/primaryTouch/tap",
+                    "interactions": "MultiTap(tapCount=3)",
+                    "processors": "",
+                    "groups": "Touch",
+                    "action": "Rotate",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "769491da-a018-423e-a51c-e654735713fe",
+                    "path": "<Touchscreen>/touch*/position",
+                    "interactions": "MultiTap",
+                    "processors": "",
+                    "groups": "Touch",
+                    "action": "Move",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "b6d4411a-bf78-4295-be4a-2877414c9dfe",
+                    "path": "<Touchscreen>/touch*/press",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "Touch",
+                    "action": "Fire",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "33863854-5ba8-448e-be38-e664726c8e4c",
+                    "path": "<Touchscreen>/touch*/press",
+                    "interactions": "MultiTap",
+                    "processors": "",
+                    "groups": "Touch",
+                    "action": "Place",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

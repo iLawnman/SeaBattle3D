@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class MobileController : MonoBehaviour
 {
@@ -11,12 +12,22 @@ public class MobileController : MonoBehaviour
     public Transform playerVposition;
     public Transform otherVposition;
     public DeviceType pladform;
+    public Text infoText;
+    [Multiline]
+    public string mobileTxt;
+    [Multiline]
+    public string nonMobileTxt;
 
     // Start is called before the first frame update
     void Start()
     {
         pladform = SystemInfo.deviceType;
         Debug.Log(pladform);
+
+        if (pladform == DeviceType.Handheld)
+            infoText.text = mobileTxt;
+        else
+            infoText.text = nonMobileTxt;
     }
 
     // Update is called once per frame
