@@ -9,6 +9,8 @@ public class MobileController : MonoBehaviour
 {
     [DllImport("__Internal")]
     private static extern bool IsMobileBrowser();
+    [DllImport("__Internal")]
+    private static extern Vector2 outScreen();
 
     public GameObject PlayerFeild;
     public GameObject otherPlayerField;
@@ -27,7 +29,10 @@ public class MobileController : MonoBehaviour
     void Start()
     {
         if (IsMobileBrowser())
+        {
             infoText.text = mobileTxt;
+            infoText.text = outScreen().ToString();
+        }
         else
             infoText.text = nonMobileTxt;
     }
@@ -38,16 +43,16 @@ public class MobileController : MonoBehaviour
         // if mobile
         if (IsMobileBrowser())
         {
-            if (Input.deviceOrientation == DeviceOrientation.Portrait)
+            var xy = outScreen();
+            infoText.text = xy.ToString();
+
+            if (xy.x > xy.y)
             {
                 ChangePortrait();
-                Debug.Log("portrait");
             }
-            if (Input.deviceOrientation == DeviceOrientation.LandscapeLeft || Input.deviceOrientation == DeviceOrientation.LandscapeRight)
+            if (xy.x < xy.y)
             {
                 ChangeLandscape();
-                Debug.Log("landscape");
-
             }
         }
         else
