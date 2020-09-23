@@ -4,6 +4,9 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.InputSystem;
 using System.Linq;
+using UnityEngine.InputSystem.EnhancedTouch;
+using Touch = UnityEngine.InputSystem.EnhancedTouch.Touch;
+using TouchPhase = UnityEngine.InputSystem.TouchPhase;
 
 public class BattleGameManager : MonoBehaviour
 {
@@ -41,6 +44,8 @@ public class BattleGameManager : MonoBehaviour
     public Vector2 _mousePosition;
     private SeaBattleInputAction _input;
 
+    public Text touchTxt;
+
     // Start is called before the first frame update
     void Start()
     {
@@ -60,17 +65,28 @@ public class BattleGameManager : MonoBehaviour
     private void OnEnable()
     {
         _input.Enable();
+        EnhancedTouchSupport.Enable();
     }
 
     private void OnDisable()
     {
         _input.Disable();
+        EnhancedTouchSupport.Disable();
+    }
+
+    public void DragAsset(Touch touch)
+    {
+        if (touch.phase == TouchPhase.Moved)
+        {
+            touchTxt.text = "MOVE";
+        }
     }
 
     //get mouse screen position
     private void Move_performed(InputAction.CallbackContext obj)
     {
         _mousePosition = obj.ReadValue<Vector2>();
+        touchTxt.text += _mousePosition;
     }
 
     // get colliders of all ships on game field
@@ -343,7 +359,24 @@ public class BattleGameManager : MonoBehaviour
                 }
             }
         }
-     }
+
+        if (Touch.activeFingers.Count == 1)
+        {
+            touchTxt.text = "ONE";
+
+        }
+        //Two fingers means the player is trying to zoom in/out
+        else if (Touch.activeFingers.Count == 2)
+        {
+            DragAsset(Touch.activeTouches[1]);
+
+        }
+        //No fingers while isBuilding is true means the player was dragging a model and stopped
+        else if (Touch.activeFingers.Count == 0)
+        {
+            touchTxt.text = "";
+        }
+    }
 
     // end game
     public void EndGame (GameObject player)
