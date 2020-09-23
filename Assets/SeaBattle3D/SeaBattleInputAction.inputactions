@@ -85,17 +85,6 @@
                 },
                 {
                     "name": "",
-                    "id": "576ffd78-c29a-4808-8738-3751688abbfb",
-                    "path": "<Touchscreen>/primaryTouch/tap",
-                    "interactions": "MultiTap(tapCount=3)",
-                    "processors": "",
-                    "groups": "Touch",
-                    "action": "Rotate",
-                    "isComposite": false,
-                    "isPartOfComposite": false
-                },
-                {
-                    "name": "",
                     "id": "769491da-a018-423e-a51c-e654735713fe",
                     "path": "<Touchscreen>/touch*/position",
                     "interactions": "MultiTap",
