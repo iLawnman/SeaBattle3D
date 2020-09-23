@@ -31,7 +31,7 @@ public class MobileController : MonoBehaviour
         if (IsMobileBrowser())
         {
             infoText.text = mobileTxt;
-            infoText.text = outScreen().ToString();
+            //infoText.text = outScreen().ToString();
         }
         else
             infoText.text = nonMobileTxt;

@@ -7,7 +7,7 @@
             "actions": [
                 {
                     "name": "Move",
-                    "type": "Value",
+                    "type": "PassThrough",
                     "id": "49ef214e-b8c6-4bcd-82c5-4ef220a259ef",
                     "expectedControlType": "Vector2",
                     "processors": "",
@@ -80,17 +80,6 @@
                     "processors": "",
                     "groups": "Keyboard&Mouse",
                     "action": "Rotate",
-                    "isComposite": false,
-                    "isPartOfComposite": false
-                },
-                {
-                    "name": "",
-                    "id": "1e9a2991-6089-4962-8a62-1225a25a7b41",
-                    "path": "<Touchscreen>/touch*/position",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": "Touch",
-                    "action": "Move",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

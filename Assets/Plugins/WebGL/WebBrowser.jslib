@@ -3,6 +3,6 @@ mergeInto(LibraryManager.library, {
     return (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent));
   },
   outScreen: function () {
-    return (outWidth, outHeight);
+    return (canvas.clientWidth, canvas.clientHeight);
   }
 });

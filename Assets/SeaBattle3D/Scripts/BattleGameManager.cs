@@ -86,7 +86,7 @@ public class BattleGameManager : MonoBehaviour
     private void Move_performed(InputAction.CallbackContext obj)
     {
         _mousePosition = obj.ReadValue<Vector2>();
-        touchTxt.text += _mousePosition;
+        touchTxt.text = _mousePosition.ToString();
     }
 
     // get colliders of all ships on game field
@@ -321,6 +321,10 @@ public class BattleGameManager : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        if (Touch.activeFingers.Count == 1)
+        {
+            _mousePosition = Touch.activeFingers[0].screenPosition;
+        }
         Ray ray = Camera.main.ScreenPointToRay(_mousePosition);
 
         RaycastHit hit;
@@ -345,6 +349,8 @@ public class BattleGameManager : MonoBehaviour
             {
                 var rootCell = Vector3Int.RoundToInt(hit.point);
 
+                touchTxt.text = rootCell.ToString();
+
                 if (hit.collider.CompareTag("Player"))
                 {
                     ShowShip(rootCell);
@@ -359,12 +365,7 @@ public class BattleGameManager : MonoBehaviour
                 }
             }
         }
-
-        if (Touch.activeFingers.Count == 1)
-        {
-            touchTxt.text = "ONE";
-
-        }
+        
         //Two fingers means the player is trying to zoom in/out
         else if (Touch.activeFingers.Count == 2)
         {
@@ -372,10 +373,10 @@ public class BattleGameManager : MonoBehaviour
 
         }
         //No fingers while isBuilding is true means the player was dragging a model and stopped
-        else if (Touch.activeFingers.Count == 0)
-        {
-            touchTxt.text = "";
-        }
+        //else if (Touch.activeFingers.Count == 0)
+        //{
+        //   // touchTxt.text = "";
+        //}
     }
 
     // end game
@@ -546,12 +547,11 @@ public class BattleGameManager : MonoBehaviour
         editedShip.transform.position = cell;
 
         Collider[] cols = editedShip.GetComponentsInChildren<Collider>();
-        var shift = (editedShip.transform.position - cell) / 10;
         var curColor = editedShip.GetComponentInChildren<MeshRenderer>().material.color;
 
         foreach (Collider chi in cols)
         {
-            Vector3 chiRelative = playerField.transform.InverseTransformPoint(chi.transform.position + shift);
+            Vector3 chiRelative = playerField.transform.InverseTransformPoint(chi.transform.position);
             if (chiRelative.x < -0.5 || chiRelative.x > 0.5 || chiRelative.z > 0.5 || chiRelative.z < -0.5)
             {
                 chi.GetComponent<MeshRenderer>().material.color = Color.red;
