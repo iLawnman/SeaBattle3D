@@ -34,6 +34,7 @@ public class MobileController : MonoBehaviour
             //RotateButton.SetActive(true);
             // off other keys
         }
+        else infoText.text = nonMobileTxt;
     }
 
     public void ReceivedBrowserData(int orientation)

@@ -349,9 +349,8 @@ public class BattleGameManager : MonoBehaviour
         }
             if (currentMode == GameMode.edit)
             {
-                modeInfo.text = "CLICK FOR PLACE SHIP";
+                //modeInfo.text = "CLICK FOR PLACE SHIP";
 
-                //***
                 if (Physics.Raycast(ray, out hit))
             {
                 var rootCell = Vector3Int.RoundToInt(hit.point);
@@ -379,9 +378,13 @@ public class BattleGameManager : MonoBehaviour
                     {
                         if (Touch.activeFingers.Count == 2 && Touch.activeTouches[1].phase == TouchPhase.Ended )
                         {
-                            PlaceShip();
+                            //***
+                            if (editCanPlace && CheckOtherShips())
+                            {
+                                PlaceShip();
+                            }
                         }
-                        if (Touch.activeFingers.Count == 2 && Touch.activeTouches[1].phase == TouchPhase.Moved)
+                        if (Touch.activeTouches[0].phase == TouchPhase.Moved)
                         {
                             RotateShip();
                         }
@@ -570,6 +573,7 @@ public class BattleGameManager : MonoBehaviour
             {
                 chi.GetComponent<MeshRenderer>().material.color = Color.red;
                 editCanPlace = false;
+                return false;
             }
             else
             {
