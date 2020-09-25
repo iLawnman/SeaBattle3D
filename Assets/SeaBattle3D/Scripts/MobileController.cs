@@ -9,8 +9,6 @@ public class MobileController : MonoBehaviour
 {
     [DllImport("__Internal")]
     private static extern bool IsMobileBrowser();
-    [DllImport("__Internal")]
-    private static extern Vector2 outScreen();
 
     public GameObject PlayerFeild;
     public GameObject otherPlayerField;
@@ -24,6 +22,8 @@ public class MobileController : MonoBehaviour
     public string mobileTxt;
     [Multiline]
     public string nonMobileTxt;
+    public bool tmp_isLand;
+    public GameObject RotateButton;
 
     // Start is called before the first frame update
     void Start()
@@ -31,45 +31,46 @@ public class MobileController : MonoBehaviour
         if (IsMobileBrowser())
         {
             infoText.text = mobileTxt;
-            //infoText.text = outScreen().ToString();
+            //RotateButton.SetActive(true);
+            // off other keys
         }
-        else
-            infoText.text = nonMobileTxt;
+    }
+
+    public void ReceivedBrowserData(int orientation)
+    {
+        if (orientation == 0)
+            ChangeLandscape();
+        if (orientation == 1)
+            ChangePortrait();
     }
 
     // Update is called once per frame
     void Update()
     {
-        // if mobile
-        if (IsMobileBrowser())
-        {
-            var xy = outScreen();
-            infoText.text = xy.ToString();
+        //if (Input.GetKeyDown(KeyCode.F1))
+        //{
+        //    tmp_isLand = !tmp_isLand;
 
-            if (xy.x > xy.y)
-            {
-                ChangePortrait();
-            }
-            if (xy.x < xy.y)
-            {
-                ChangeLandscape();
-            }
-        }
-        else
-            this.enabled = false;
+        //    if (tmp_isLand)
+        //        ChangeLandscape();
+        //    else
+        //        ChangePortrait();
+        //}
+
     }
 
-    void ChangePortrait ()
+    void ChangeLandscape ()
     {
         PlayerFeild.transform.position = playerHposition.position;
         otherPlayerField.transform.position = otherHposition.position;
-        Camera.main.ResetAspect();
+        Camera.main.transform.position = new Vector3(0, 13, -3);
     }
-    void ChangeLandscape ()
+    void ChangePortrait ()
     {
         PlayerFeild.transform.position = playerVposition.position;
         otherPlayerField.transform.position = otherVposition.position;
-        Camera.main.ResetAspect();
+        Camera.main.transform.position = new Vector3(0.5f, 19, -4.5f);
+
 
     }
 }

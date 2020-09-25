@@ -18,18 +18,23 @@ public class BattleGameManager : MonoBehaviour
     //game ui elements
     public GameObject cross;
     public GameObject hitShip;
-    public bool playerCanShot = true;
 
     //AI ships data
     public PlayerField otherPlayerFeildData;
     public GameObject otherPlayerField;
     public List<Collider> otherShipColliders;
     public List<Vector3> aiShoots = new List<Vector3>();
+    public int aiWins;
+    public Text aiCount;
+
 
     //Player ships data
     public GameObject playerField;
     public PlayerField playerFieldData;
     public List<Collider> playerShipColliders;
+    public bool playerCanShot = true;
+    public int playerWins;
+    public Text playerCount;
 
     //data for edit mode
     public GameObject editedShip;
@@ -74,19 +79,19 @@ public class BattleGameManager : MonoBehaviour
         EnhancedTouchSupport.Disable();
     }
 
-    public void DragAsset(Touch touch)
-    {
-        if (touch.phase == TouchPhase.Moved)
-        {
-            touchTxt.text = "MOVE";
-        }
-    }
+    //public void DragAsset(Touch touch)
+    //{
+    //    if (touch.phase == TouchPhase.Moved)
+    //    {
+    //        touchTxt.text = "MOVE";
+    //    }
+    //}
 
     //get mouse screen position
     private void Move_performed(InputAction.CallbackContext obj)
     {
         _mousePosition = obj.ReadValue<Vector2>();
-        touchTxt.text = _mousePosition.ToString();
+        //touchTxt.text = _mousePosition.ToString();
     }
 
     // get colliders of all ships on game field
@@ -275,33 +280,24 @@ public class BattleGameManager : MonoBehaviour
                 if (cube.transform.localPosition.y < 0)
                     goodShot.Add(cubeRelative);
             }
-                if (goodShot.Count == 1)
-                {
-                do
-                {
-                    var shift = Random.Range(0, 4);
-                    switch (shift)
-                    {
-                        case 0:
-                            shoot = goodShot[0] + Vector3.forward;
-                            break;
-                        case 1:
-                            shoot = goodShot[0] + Vector3.back;
-                            break;
-                        case 2:
-                            shoot = goodShot[0] + Vector3.left;
-                            break;
-                        case 3:
-                            shoot = goodShot[0] + Vector3.right;
-                            break;
-                    }
+            if (goodShot.Count == 1)
+            {
 
-                    if (aiShoots.Contains(shoot))
-                        Debug.Log("1 inj sector shot contain new - new recall " + shoot);
-                }
-                while (aiShoots.Contains(shoot));
-                }
+                var newShot = goodShot[0] + Vector3.forward;
 
+                if (aiShoots.Contains(newShot))
+                {
+                    newShot = goodShot[0] + Vector3.back;
+
+                    if (aiShoots.Contains(newShot))
+                        newShot = goodShot[0] + Vector3.left;
+
+                    if (aiShoots.Contains(newShot))
+                        newShot = goodShot[0] + Vector3.right;
+                }
+                shoot = newShot;
+
+            }
             if (goodShot.Count > 1)
             {
                 foreach (Transform cube in injShip.go.transform)
@@ -331,13 +327,21 @@ public class BattleGameManager : MonoBehaviour
 
         if (currentMode == GameMode.play)
         {
+            modeInfo.text = "CLICK FOR FIRE";
+
             //***
             if (playerCanShot && _input.Player.Fire.triggered)
             {
                 if (Physics.Raycast(ray, out hit))
                 {
-                    aSource.PlayOneShot(audioManager.shot);
-                    CheckFireCell(hit);
+                    if (!hit.collider.CompareTag("Player"))
+                    {
+                        var rootCell = Vector3Int.RoundToInt(hit.point);
+                        touchTxt.text = rootCell.ToString();
+
+                        aSource.PlayOneShot(audioManager.shot);
+                        CheckFireCell(hit);
+                    }
                 }
             }
             if (!playerCanShot)
@@ -345,38 +349,46 @@ public class BattleGameManager : MonoBehaviour
         }
             if (currentMode == GameMode.edit)
             {
+                modeInfo.text = "CLICK FOR PLACE SHIP";
+
+                //***
                 if (Physics.Raycast(ray, out hit))
             {
                 var rootCell = Vector3Int.RoundToInt(hit.point);
-
                 touchTxt.text = rootCell.ToString();
 
                 if (hit.collider.CompareTag("Player"))
                 {
                     ShowShip(rootCell);
                 }
-                if (editCanPlace && rootCell != null && _input.Player.Fire.triggered)
+                
+                if (editCanPlace && rootCell != null)
                 {
-                    PlaceShip();
-                }
-                if (_input.Player.Rotate.triggered)
-                {
-                    RotateShip(rootCell);
+                    if (Touch.activeFingers.Count == 0)
+                    {
+                        if (_input.Player.Fire.triggered)
+                        {
+                            PlaceShip();
+                        }
+                        if (_input.Player.Rotate.triggered)
+                        {
+                            RotateShip();
+                        }
+                    }
+                    else
+                    {
+                        if (Touch.activeFingers.Count == 2 && Touch.activeTouches[1].phase == TouchPhase.Ended )
+                        {
+                            PlaceShip();
+                        }
+                        if (Touch.activeFingers.Count == 2 && Touch.activeTouches[1].phase == TouchPhase.Moved)
+                        {
+                            RotateShip();
+                        }
+                    }
                 }
             }
         }
-        
-        //Two fingers means the player is trying to zoom in/out
-        else if (Touch.activeFingers.Count == 2)
-        {
-            DragAsset(Touch.activeTouches[1]);
-
-        }
-        //No fingers while isBuilding is true means the player was dragging a model and stopped
-        //else if (Touch.activeFingers.Count == 0)
-        //{
-        //   // touchTxt.text = "";
-        //}
     }
 
     // end game
@@ -454,6 +466,8 @@ public class BattleGameManager : MonoBehaviour
     {
         currentMode = GameMode.pause;
         uiManager.winUI.SetActive(true);
+        playerWins += 1;
+        playerCount.text = playerWins.ToString();
     }
 
     // ai win
@@ -461,6 +475,8 @@ public class BattleGameManager : MonoBehaviour
     {
         currentMode = GameMode.pause;
         uiManager.loseUI.SetActive(true);
+        aiWins += 1;
+        aiCount.text = aiWins.ToString();
     }
 
     //place player ship and get next for select place
@@ -478,21 +494,19 @@ public class BattleGameManager : MonoBehaviour
                 chi.enabled = true;
 
             editedShip = newShip.go;
-            editedShip.transform.localPosition = new Vector3(0, 0.5f, 0);
+            editedShip.transform.localPosition = new Vector3(11, 0.5f, 0);
 
         }
         else
         {
-            Debug.Log("Ready for play");
             currentMode = GameMode.play;
-            modeInfo.text = "PLAY";
         }
     }
 
     // rotate player ship
-    void RotateShip(Vector3Int rootCell)
+    public void RotateShip()
     {
-        editedShip.transform.RotateAround(rootCell, transform.up, 90);
+        editedShip.transform.RotateAround(editedShip.transform.position, transform.up, 90);
     }
 
     // show ship while edit
@@ -556,8 +570,6 @@ public class BattleGameManager : MonoBehaviour
             {
                 chi.GetComponent<MeshRenderer>().material.color = Color.red;
                 editCanPlace = false;
-                //Debug.Log("out of field");
-                //return false;
             }
             else
             {
@@ -576,8 +588,9 @@ public class BattleGameManager : MonoBehaviour
                 aSource.PlayOneShot(audioManager.ship);
 
                 GameObject shipInjured = Instantiate(hitShip);
-                shipInjured.transform.localPosition = Vector3Int.RoundToInt(hit.point);
-                shipInjured.transform.SetParent(otherPlayerField.transform);
+                shipInjured.transform.position = Vector3Int.RoundToInt(hit.collider.transform.position);
+                shipInjured.transform.SetParent(otherPlayerFeildData.transform);
+                shipInjured.transform.localPosition = Vector3Int.CeilToInt(shipInjured.transform.localPosition);
 
                 hit.collider.GetComponentInChildren<MeshRenderer>().enabled = true;
 
@@ -606,10 +619,11 @@ public class BattleGameManager : MonoBehaviour
                     aSource.PlayOneShot(audioManager.empty);
 
                     GameObject fire = Instantiate(cross);
-                    fire.transform.localPosition = checkCell + new Vector3(0, -0.4f,0);
-                    fire.transform.SetParent(otherPlayerField.transform);
-                }
-                playerCanShot = false;
+                    fire.transform.localPosition = checkCell + new Vector3(0, -1f, 0);
+                    fire.transform.SetParent(otherPlayerFeildData.transform);
+                    fire.transform.localPosition = Vector3Int.CeilToInt(fire.transform.localPosition);
+            }
+            playerCanShot = false;
             }
         }
 
