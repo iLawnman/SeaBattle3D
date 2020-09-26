@@ -19,6 +19,8 @@ public class BattleGameManager : MonoBehaviour
     public GameObject cross;
     public GameObject hitShip;
 
+    public GameObject destroCube;
+
     //AI ships data
     public PlayerField otherPlayerFeildData;
     public GameObject otherPlayerField;
@@ -26,7 +28,7 @@ public class BattleGameManager : MonoBehaviour
     public List<Vector3> aiShoots = new List<Vector3>();
     public int aiWins;
     public Text aiCount;
-
+    public bool AIready;
 
     //Player ships data
     public GameObject playerField;
@@ -43,6 +45,7 @@ public class BattleGameManager : MonoBehaviour
     //game data
     public GameUIManager uiManager;
     public GameAudioManager audioManager;
+
     public AudioSource aSource;
 
     //input data
@@ -50,6 +53,145 @@ public class BattleGameManager : MonoBehaviour
     private SeaBattleInputAction _input;
 
     public Text touchTxt;
+
+    // Update is called once per frame
+    void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.F1))
+        {
+            //AIshot();
+            AIready = false;
+            StartCoroutine("AIShot");
+        }
+
+        if (Touch.activeFingers.Count != 0)
+        {
+            _mousePosition = Touch.activeFingers[0].screenPosition;
+        }
+        Ray ray = Camera.main.ScreenPointToRay(_mousePosition);
+
+        RaycastHit hit;
+
+        if (currentMode == GameMode.play)
+        {
+            modeInfo.text = "CLICK FOR FIRE";
+
+            //***
+            if (playerCanShot && _input.Player.Fire.triggered)
+            {
+                if (Physics.Raycast(ray, out hit))
+                {
+                    if (!hit.collider.CompareTag("Player"))
+                    {
+                        var rootCell = Vector3Int.RoundToInt(hit.point);
+                        touchTxt.text = rootCell.ToString();
+
+                        aSource.PlayOneShot(audioManager.shot);
+                        CheckFireCell(hit);
+                    }
+                }
+            }
+            if (!playerCanShot && AIready)
+            {
+                AIready = false;
+                StartCoroutine("AIShot");
+                //AIshot();
+            }
+        }
+        if (currentMode == GameMode.edit)
+        {
+            if (Physics.Raycast(ray, out hit))
+            {
+                var rootCell = Vector3Int.RoundToInt(hit.point);
+                touchTxt.text = rootCell.ToString();
+
+                    if (hit.collider.CompareTag("Player"))
+                    {
+                        ShowShip(rootCell);
+                    }
+
+                if (Touch.activeFingers.Count == 0)
+                {
+                    if (_input.Player.Fire.triggered)
+                    {
+                        PlaceShip();
+                    }
+                    if (_input.Player.Rotate.triggered)
+                    {
+                        RotateShip();
+                    }
+                }
+                else if (!hit.collider.CompareTag("Player"))
+                {
+                    if (Touch.activeTouches.Count == 2 && Touch.activeTouches[1].phase == TouchPhase.Ended)
+                    {
+                        PlaceShip();
+                    }
+                    if (Touch.activeTouches.Count == 1)
+                    {
+                        RotateShip();
+                    }
+                }
+            }
+        }
+    }
+
+    //place player ship and get next for select place
+    public void PlaceShip()
+    {
+        if (editCanPlace)
+        {
+            // select next ship
+            var ship = playerFieldData.Ships.Find(x => x.go == editedShip);
+            ship.status = PlayerField.shipStatus.Placed;
+
+            var chiPlaced = ship.go.GetComponentsInChildren<MeshRenderer>();
+
+            foreach (MeshRenderer chi in chiPlaced)
+            {
+                chi.gameObject.transform.localPosition = Vector3Int.FloorToInt(chi.transform.localPosition);
+            }
+
+            var newShip = playerFieldData.Ships.Find(x => x.status == PlayerField.shipStatus.Hide);
+
+            if (newShip != null)
+            {
+                editedShip = newShip.go;
+                editedShip.transform.localPosition = new Vector3(11, 0.5f, 0);
+            }
+            else
+            {
+                currentMode = GameMode.play;
+            }
+        }
+    }
+
+    void DestroyCube (GameObject cube)
+    {
+        cube.GetComponent<MeshRenderer>().enabled = false;
+        var destroyedCube = Instantiate(destroCube, cube.transform);
+        destroyedCube.name = "destroy";
+        destroyedCube.transform.localPosition = Vector3.zero;
+        int angleRot = Random.Range(0, 4);
+
+        Quaternion qRoatate = new Quaternion();
+        switch (angleRot)
+        {
+            case 0:
+                qRoatate = Quaternion.Euler(0, 0, 0);
+            break;
+            case 1:
+                qRoatate = Quaternion.Euler(0, 90, 0);
+                break;
+            case 2:
+                qRoatate = Quaternion.Euler(0, 180, 0);
+                break;
+            default:
+                qRoatate = Quaternion.Euler(0, 270, 0);
+                break;
+        }
+        destroyedCube.transform.localRotation = qRoatate;
+    }
 
     // Start is called before the first frame update
     void Start()
@@ -79,13 +221,13 @@ public class BattleGameManager : MonoBehaviour
         EnhancedTouchSupport.Disable();
     }
 
-    //public void DragAsset(Touch touch)
-    //{
-    //    if (touch.phase == TouchPhase.Moved)
-    //    {
-    //        touchTxt.text = "MOVE";
-    //    }
-    //}
+    public void DragAsset(Touch touch)
+    {
+        if (touch.phase == TouchPhase.Moved)
+        {
+            touchTxt.text = "MOVE";
+        }
+    }
 
     //get mouse screen position
     private void Move_performed(InputAction.CallbackContext obj)
@@ -114,6 +256,13 @@ public class BattleGameManager : MonoBehaviour
 
         foreach (PlayerField.ShipData ship in otherShips)
         {
+            ship.status = PlayerField.shipStatus.Hide;
+            ResetShipCubes(ship.go);
+            foreach (Transform mesh in ship.go.transform)
+            {
+                mesh.GetComponent<MeshRenderer>().enabled = false;
+            }
+
             if (Random.Range(0, 2) == 1)
                 ship.go.transform.RotateAround(ship.go.transform.position, transform.up, 90);
             
@@ -200,6 +349,10 @@ public class BattleGameManager : MonoBehaviour
         {
             if (cube.CompareTag("Ship"))
             {
+                if (cube.transform.position.x == shoot.x)
+                {
+                    Debug.Log(cube.transform.parent.name + " x = shot x " + shoot.x);
+                }
                 if (cube.transform.position.x == shoot.x && cube.transform.position.z == shoot.z)
                 {
                     Debug.Log("AI shoot in " + cube.transform.parent.name);
@@ -207,8 +360,10 @@ public class BattleGameManager : MonoBehaviour
 
                     var ship = playerFieldData.Ships.Find(x => x.go == cube.transform.parent.gameObject);
                     
-                    cube.transform.position += new Vector3(0, -0.2f, 0);
                     ship.status = PlayerField.shipStatus.Injured;
+                    cube.transform.position += new Vector3(0, -0.2f, 0);
+
+                    //DestroyCube(cube.gameObject);
 
                     if (CheckPlayerShipDie(ship.go.transform))
                     {
@@ -227,7 +382,8 @@ public class BattleGameManager : MonoBehaviour
     }
 
     // instance shot GO
-    void AIshot()
+    IEnumerator AIShot ()
+    // void AIshot()
     {
         Vector3 shootAIposition = GetAIshot();
 
@@ -249,6 +405,9 @@ public class BattleGameManager : MonoBehaviour
         {
             playerCanShot = true;
         }
+
+            yield return new WaitForSeconds(2);
+            AIready = true;
     }
 
     // getc ai shot position for random/injured player ship
@@ -259,6 +418,10 @@ public class BattleGameManager : MonoBehaviour
 
         var injShip = playerFieldData.Ships.Find(x => x.status == PlayerField.shipStatus.Injured);
 
+        if (aiShoots.Count == 0)
+        {
+            shoot = new Vector3(Random.Range(0, 10), 0, Random.Range(-9, 1));
+        }
         if (injShip == null && aiShoots.Count > 0)
         {
             do
@@ -268,9 +431,7 @@ public class BattleGameManager : MonoBehaviour
             } while (aiShoots.Contains(shoot));
         }
 
-        else {
-            shoot = new Vector3(Random.Range(0, 10), 0, Random.Range(-9, 1));
-        }
+        
         if (injShip != null && aiShoots.Count > 0) {
 
             foreach (Transform cube in injShip.go.transform)
@@ -282,21 +443,20 @@ public class BattleGameManager : MonoBehaviour
             }
             if (goodShot.Count == 1)
             {
-
                 var newShot = goodShot[0] + Vector3.forward;
-
                 if (aiShoots.Contains(newShot))
                 {
                     newShot = goodShot[0] + Vector3.back;
-
                     if (aiShoots.Contains(newShot))
+                    {
                         newShot = goodShot[0] + Vector3.left;
-
-                    if (aiShoots.Contains(newShot))
-                        newShot = goodShot[0] + Vector3.right;
+                        if (aiShoots.Contains(newShot))
+                        {
+                            newShot = goodShot[0] + Vector3.right;
+                        }
+                    }
                 }
-                shoot = newShot;
-
+                    shoot = new Vector3(newShot.x, 0, newShot.z);
             }
             if (goodShot.Count > 1)
             {
@@ -306,92 +466,11 @@ public class BattleGameManager : MonoBehaviour
                     cubeRelative = new Vector3(cubeRelative.x, 0, cubeRelative.z);
                     if (cube.transform.localPosition.y == 0 && !aiShoots.Contains(new Vector3(cubeRelative.x, 0, cubeRelative.z)))
                         shoot = new Vector3(cubeRelative.x, 0, cubeRelative.z);
-                    Debug.Log("2 and more inj " + shoot);
                 }
             }
         }
         aiShoots.Add(new Vector3( shoot.x, 0, shoot.z));
         return new Vector3(shoot.x, 0, shoot.z);
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        if (Touch.activeFingers.Count == 1)
-        {
-            _mousePosition = Touch.activeFingers[0].screenPosition;
-        }
-        Ray ray = Camera.main.ScreenPointToRay(_mousePosition);
-
-        RaycastHit hit;
-
-        if (currentMode == GameMode.play)
-        {
-            modeInfo.text = "CLICK FOR FIRE";
-
-            //***
-            if (playerCanShot && _input.Player.Fire.triggered)
-            {
-                if (Physics.Raycast(ray, out hit))
-                {
-                    if (!hit.collider.CompareTag("Player"))
-                    {
-                        var rootCell = Vector3Int.RoundToInt(hit.point);
-                        touchTxt.text = rootCell.ToString();
-
-                        aSource.PlayOneShot(audioManager.shot);
-                        CheckFireCell(hit);
-                    }
-                }
-            }
-            if (!playerCanShot)
-                AIshot();
-        }
-            if (currentMode == GameMode.edit)
-            {
-                //modeInfo.text = "CLICK FOR PLACE SHIP";
-
-                if (Physics.Raycast(ray, out hit))
-            {
-                var rootCell = Vector3Int.RoundToInt(hit.point);
-                touchTxt.text = rootCell.ToString();
-
-                if (hit.collider.CompareTag("Player"))
-                {
-                    ShowShip(rootCell);
-                }
-                
-                if (editCanPlace && rootCell != null)
-                {
-                    if (Touch.activeFingers.Count == 0)
-                    {
-                        if (_input.Player.Fire.triggered)
-                        {
-                            PlaceShip();
-                        }
-                        if (_input.Player.Rotate.triggered)
-                        {
-                            RotateShip();
-                        }
-                    }
-                    else
-                    {
-                        if (Touch.activeFingers.Count == 2 && Touch.activeTouches[1].phase == TouchPhase.Ended )
-                        {
-                            //***
-                            if (editCanPlace && CheckOtherShips())
-                            {
-                                PlaceShip();
-                            }
-                        }
-                        if (Touch.activeTouches[0].phase == TouchPhase.Moved)
-                        {
-                            RotateShip();
-                        }
-                    }
-                }
-            }
-        }
     }
 
     // end game
@@ -413,39 +492,35 @@ public class BattleGameManager : MonoBehaviour
         Application.Quit();
     }
 
-    //new game
-    public void NewGame()
+    void ClearCross ()
     {
-
-        var otherShips = otherPlayerFeildData.Ships;
-        foreach (PlayerField.ShipData oship in otherShips)
-        {
-            oship.status = PlayerField.shipStatus.Hide;
-            ResetShipCubes(oship.go);
-            foreach (Transform mesh in oship.go.transform)
-            {
-                mesh.GetComponent<MeshRenderer>().enabled = false;
-            }
-        }
-        AIShipsRandomPlace();
-
-        var playerShips = playerFieldData.Ships;
-        foreach (PlayerField.ShipData pship in playerShips)
-        {
-            pship.status = PlayerField.shipStatus.Hide;
-            pship.go.transform.localPosition = new Vector3(2, 0.5f, -11);
-            ResetShipCubes(pship.go);
-        }
-        var startShip = playerFieldData.Ships.Find(x => x.status == PlayerField.shipStatus.Hide);
-        editedShip = startShip.go;
-
         var childs = GetComponentsInChildren<Transform>();
-
         foreach (Transform chi in childs)
         {
             if (chi.name.Contains("cross"))
                 Destroy(chi.gameObject);
         }
+    }
+
+    void StartPlayerShips () {
+
+        var playerShips = playerFieldData.Ships;
+        foreach (PlayerField.ShipData pship in playerShips)
+        {
+            pship.status = PlayerField.shipStatus.Hide;
+            pship.go.transform.localPosition = new Vector3(2, 0.5f, -35);
+            ResetShipCubes(pship.go);
+        }
+        var startShip = playerFieldData.Ships.Find(x => x.status == PlayerField.shipStatus.Hide);
+        editedShip = startShip.go;
+    }
+
+    //new game
+    public void NewGame()
+    {
+        StartPlayerShips();
+        AIShipsRandomPlace();
+        ClearCross();
         aiShoots.Clear();
         currentMode = GameMode.edit;
 
@@ -460,7 +535,11 @@ public class BattleGameManager : MonoBehaviour
         foreach (Transform cube in ship.transform)
         {
             var cubeTransform = cube.transform;
+            cube.GetComponent<MeshRenderer>().enabled = true;
             cube.position = new Vector3(cubeTransform.position.x, 0, cubeTransform.position.z);
+            //var dest = cube.transform.Find("destroy");
+            //if (dest != null)
+            //Destroy(dest.gameObject);
         }
     }
 
@@ -482,41 +561,20 @@ public class BattleGameManager : MonoBehaviour
         aiCount.text = aiWins.ToString();
     }
 
-    //place player ship and get next for select place
-    void PlaceShip()
+    // show ship while edit
+    void ShowShip(Vector3Int cell)
     {
-        // select next ship
-        var ship = playerFieldData.Ships.Find(x => x.go == editedShip);
-        ship.status = PlayerField.shipStatus.Placed;
-        var newShip = playerFieldData.Ships.Find(x => x.status == PlayerField.shipStatus.Hide);
-        if (newShip != null)
-        {
-            var chiMeshs = newShip.go.GetComponentsInChildren<MeshRenderer>();
+        var oldPosition = editedShip.transform.position;
+        editedShip.transform.position = cell;
 
-            foreach (MeshRenderer chi in chiMeshs)
-                chi.enabled = true;
-
-            editedShip = newShip.go;
-            editedShip.transform.localPosition = new Vector3(11, 0.5f, 0);
-
-        }
-        else
-        {
-            currentMode = GameMode.play;
-        }
+        if (!CheckPlaceForShip(cell) || !CheckOtherShips())
+            editedShip.transform.position = oldPosition;
     }
 
     // rotate player ship
     public void RotateShip()
     {
         editedShip.transform.RotateAround(editedShip.transform.position, transform.up, 90);
-    }
-
-    // show ship while edit
-    void ShowShip (Vector3Int cell)
-    {
-        CheckPlaceForShip(cell);
-        CheckOtherShips();
     }
 
     // check edited ship for intersect with placed player ships
@@ -561,23 +619,22 @@ public class BattleGameManager : MonoBehaviour
     // check edited ship in game field
     bool CheckPlaceForShip(Vector3Int cell)
     {
-        editedShip.transform.position = cell;
 
         Collider[] cols = editedShip.GetComponentsInChildren<Collider>();
-        var curColor = editedShip.GetComponentInChildren<MeshRenderer>().material.color;
+     //   var curColor = editedShip.GetComponentInChildren<MeshRenderer>().material.color;
 
         foreach (Collider chi in cols)
         {
             Vector3 chiRelative = playerField.transform.InverseTransformPoint(chi.transform.position);
             if (chiRelative.x < -0.5 || chiRelative.x > 0.5 || chiRelative.z > 0.5 || chiRelative.z < -0.5)
             {
-                chi.GetComponent<MeshRenderer>().material.color = Color.red;
+                //chi.GetComponent<MeshRenderer>().material.color = Color.red;
                 editCanPlace = false;
                 return false;
             }
             else
             {
-                chi.GetComponent<MeshRenderer>().material.color = curColor;
+                //chi.GetComponent<MeshRenderer>().material.color = curColor;
                 editCanPlace = true;
             }
         }

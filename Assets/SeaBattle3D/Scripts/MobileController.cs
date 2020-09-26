@@ -16,25 +16,23 @@ public class MobileController : MonoBehaviour
     public Transform otherHposition;
     public Transform playerVposition;
     public Transform otherVposition;
-    public DeviceType pladform;
     public Text infoText;
     [Multiline]
     public string mobileTxt;
     [Multiline]
     public string nonMobileTxt;
-    public bool tmp_isLand;
-    public GameObject RotateButton;
 
     // Start is called before the first frame update
     void Start()
     {
+        infoText.text = nonMobileTxt;
+
         if (IsMobileBrowser())
         {
             infoText.text = mobileTxt;
             //RotateButton.SetActive(true);
-            // off other keys
+            //PlaceButton.SetActive(true);
         }
-        else infoText.text = nonMobileTxt;
     }
 
     public void ReceivedBrowserData(int orientation)
@@ -48,15 +46,6 @@ public class MobileController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        //if (Input.GetKeyDown(KeyCode.F1))
-        //{
-        //    tmp_isLand = !tmp_isLand;
-
-        //    if (tmp_isLand)
-        //        ChangeLandscape();
-        //    else
-        //        ChangePortrait();
-        //}
 
     }
 
@@ -70,7 +59,7 @@ public class MobileController : MonoBehaviour
     {
         PlayerFeild.transform.position = playerVposition.position;
         otherPlayerField.transform.position = otherVposition.position;
-        Camera.main.transform.position = new Vector3(0.5f, 19, -4.5f);
+        Camera.main.transform.position = new Vector3(0.5f, 18, -4.5f);
 
 
     }
