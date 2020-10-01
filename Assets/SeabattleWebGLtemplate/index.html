@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en-us">
+
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <title>Unity WebGL Player | {{{ PRODUCT_NAME }}}</title>
+  <link rel="shortcut icon" href="TemplateData/favicon.ico">
+  <link rel="stylesheet" href="TemplateData/style.css">
+</head>
+
+<body>
+  <div id="unity-container" class="unity-desktop">
+    <canvas id="unity-canvas"></canvas>
+  </div>
+
+  <script>
+
+    const display = window.Display;
+
+    //UnityInstance init
+    var buildUrl = "Build";
+    var loaderUrl = buildUrl + "/{{{ LOADER_FILENAME }}}";
+    var config = {
+      dataUrl: buildUrl + "/{{{ DATA_FILENAME }}}",
+      frameworkUrl: buildUrl + "/{{{ FRAMEWORK_FILENAME }}}",
+      codeUrl: buildUrl + "/{{{ CODE_FILENAME }}}",
+      #if MEMORY_FILENAME
+        memoryUrl: buildUrl + "/{{{ MEMORY_FILENAME }}}",
+      #endif
+#if SYMBOLS_FILENAME
+        symbolsUrl: buildUrl + "/{{{ SYMBOLS_FILENAME }}}",
+      #endif
+        streamingAssetsUrl: "StreamingAssets",
+      companyName: "{{{ COMPANY_NAME }}}",
+      productName: "{{{ PRODUCT_NAME }}}",
+      productVersion: "{{{ PRODUCT_VERSION }}}",
+    };
+
+    var container = document.querySelector("#unity-container");
+    var canvas = document.querySelector("#unity-canvas");
+
+    if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+      container.className = "unity-mobile";
+      config.devicePixelRatio = 1;
+    } else {
+      canvas.style.width = "1080px";
+      canvas.style.height = "960px";
+    }
+#if BACKGROUND_FILENAME
+    canvas.style.background = "url('" + buildUrl + "/{{{ BACKGROUND_FILENAME.replace(/'/g, '%27') }}}') center / cover";
+#endif
+
+    var script = document.createElement("script");
+    var unityInstance;
+    script.src = loaderUrl;
+    script.onload = () => {
+      createUnityInstance(canvas, config
+      ).then((ui) => {
+        unityInstance = ui;
+      })
+    };
+    document.body.appendChild(script);
+
+    //send device rotation to unity
+    function doOnOrientationChange() {
+      switch (window.orientation) {
+        case -90:
+        case 90:
+          unityInstance.SendMessage('BattleScene', 'ReceivedBrowserData', 0);
+          break;
+        default:
+          unityInstance.SendMessage('BattleScene', 'ReceivedBrowserData', 1);
+          break;
+      }
+    };
+
+    window.addEventListener('orientationchange', doOnOrientationChange);
+
+  </script>
+</body>
+
+</html>
