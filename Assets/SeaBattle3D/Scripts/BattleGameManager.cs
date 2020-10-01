@@ -349,10 +349,6 @@ public class BattleGameManager : MonoBehaviour
         {
             if (cube.CompareTag("Ship"))
             {
-                if (cube.transform.position.x == shoot.x)
-                {
-                    Debug.Log(cube.transform.parent.name + " x = shot x " + shoot.x);
-                }
                 if (cube.transform.position.x == shoot.x && cube.transform.position.z == shoot.z)
                 {
                     Debug.Log("AI shoot in " + cube.transform.parent.name);
