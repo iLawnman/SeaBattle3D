@@ -16,7 +16,6 @@ public class MobileController : MonoBehaviour
     public Transform otherHposition;
     public Transform playerVposition;
     public Transform otherVposition;
-    public DeviceType pladform;
     public Text infoText;
     [Multiline]
     public string mobileTxt;
@@ -26,45 +25,42 @@ public class MobileController : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        infoText.text = nonMobileTxt;
+
         if (IsMobileBrowser())
+        {
             infoText.text = mobileTxt;
-        else
-            infoText.text = nonMobileTxt;
+            //RotateButton.SetActive(true);
+            //PlaceButton.SetActive(true);
+        }
+    }
+
+    public void ReceivedBrowserData(int orientation)
+    {
+        if (orientation == 0)
+            ChangeLandscape();
+        if (orientation == 1)
+            ChangePortrait();
     }
 
     // Update is called once per frame
     void Update()
     {
-        // if mobile
-        if (IsMobileBrowser())
-        {
-            if (Input.deviceOrientation == DeviceOrientation.Portrait)
-            {
-                ChangePortrait();
-                Debug.Log("portrait");
-            }
-            if (Input.deviceOrientation == DeviceOrientation.LandscapeLeft || Input.deviceOrientation == DeviceOrientation.LandscapeRight)
-            {
-                ChangeLandscape();
-                Debug.Log("landscape");
 
-            }
-        }
-        else
-            this.enabled = false;
     }
 
-    void ChangePortrait ()
+    void ChangeLandscape ()
     {
         PlayerFeild.transform.position = playerHposition.position;
         otherPlayerField.transform.position = otherHposition.position;
-        Camera.main.ResetAspect();
+        Camera.main.transform.position = new Vector3(0, 13, -3);
     }
-    void ChangeLandscape ()
+    void ChangePortrait ()
     {
         PlayerFeild.transform.position = playerVposition.position;
         otherPlayerField.transform.position = otherVposition.position;
-        Camera.main.ResetAspect();
+        Camera.main.transform.position = new Vector3(0.5f, 18, -4.5f);
+
 
     }
 }
